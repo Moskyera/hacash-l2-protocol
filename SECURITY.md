@@ -138,7 +138,7 @@ See `GET /v1/payments/:id/message` and `crypto` in agent capabilities.
 
 ## Dependency status
 
-The `hub-v0.2.0` release passes `cargo audit` with no known vulnerable
+The `hub-v0.2.1` release passes `cargo audit` with no known vulnerable
 dependencies as of 2026-08-09. The audit does report that
 `libsecp256k1 0.7.2` is unmaintained (`RUSTSEC-2025-0161`). Replacing a
 signature library is a compatibility-sensitive cryptographic migration, so

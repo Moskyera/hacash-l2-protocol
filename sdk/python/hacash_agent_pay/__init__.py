@@ -20,4 +20,4 @@ __all__ = [
     "assert_ready_for_close",
     "close_checklist",
 ]
-__version__ = "0.2.0"
+__version__ = "0.2.1"

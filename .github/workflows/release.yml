@@ -42,7 +42,7 @@ jobs:
 
       - name: Test Python SDK
         run: |
-          python3 -m pip install --disable-pip-version-check -e './sdk/python[dev]'
+          python3 -m pip install --disable-pip-version-check './sdk/python[dev]'
           python3 -m pytest -q sdk/python/tests
 
   build-windows:
