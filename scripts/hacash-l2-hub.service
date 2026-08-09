@@ -1,0 +1,26 @@
+[Unit]
+Description=Hacash L2 Channel Chain hub (CSP / global mesh)
+Documentation=file:///opt/hacash-l2/NETWORK-GLOBAL.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hacash-l2
+Group=hacash-l2
+EnvironmentFile=-/etc/hacash-l2-hub.env
+ExecStart=/usr/local/bin/hacash-l2-hub
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hacash-l2
+PrivateTmp=true
+# Hardening (optional uncomment)
+# MemoryMax=512M
+# CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

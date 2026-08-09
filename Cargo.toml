@@ -1,0 +1,35 @@
+[package]
+name = "hacash-l2-protocol"
+version = "0.2.0"
+edition = "2021"
+description = "Hacash L2 Channel Chain protocol — standalone Channel Service Provider hub (separate from miner/fullnode)"
+license = "MIT"
+readme = "README.md"
+keywords = ["hacash", "l2", "channel-chain", "payments", "csp"]
+categories = ["network-programming", "cryptography::cryptocurrencies"]
+default-run = "hacash-l2-hub"
+
+[[bin]]
+name = "hacash-l2-hub"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.7"
+base58check = "0.1"
+futures-util = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+hex = "0.4"
+libsecp256k1 = { version = "0.7.2", default-features = false, features = ["hmac", "static-context"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+ripemd = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sha3 = "0.10"
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+zeroize = "1.9"

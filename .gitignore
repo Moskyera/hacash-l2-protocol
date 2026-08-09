@@ -1,0 +1,14 @@
+/target
+**/target
+data/
+*.log
+.hub-state.json
+.env
+.DS_Store
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+node_modules/
+dist/
+/dist-hub/

@@ -1,0 +1,238 @@
+name: Release HPAY Fast Pay Hub
+
+on:
+  push:
+    tags:
+      - "hub-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RELEASE_REF_NAME: ${{ github.ref_name }}
+
+jobs:
+  sdk-tests:
+    name: SDK validation
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.16.0
+
+      - name: Test and build TypeScript SDK
+        working-directory: sdk/typescript
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm test
+          pnpm run build
+          pnpm audit --prod --audit-level high
+
+      - name: Test Python SDK
+        run: |
+          python3 -m pip install --disable-pip-version-check -e './sdk/python[dev]'
+          python3 -m pytest -q sdk/python/tests
+
+  build-windows:
+    name: Hub (Windows x64)
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: hpay-hub-windows
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build release
+        run: cargo build --locked --release --bin hacash-l2-hub
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = "manual"
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            if ($env:RELEASE_REF_NAME -notmatch '^hub-v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$') {
+              throw "Unsafe hub release tag: $env:RELEASE_REF_NAME"
+            }
+            $version = $env:RELEASE_REF_NAME
+          }
+          & "$env:GITHUB_WORKSPACE\scripts\pack-hub-release.ps1" -Version $version
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem "$env:GITHUB_WORKSPACE\dist-hub" -Filter "*.zip" -File)
+          if ($archives.Count -ne 1) { throw "Expected exactly one Windows hub ZIP" }
+          $archive = $archives[0]
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive.FullName).Hash.ToLowerInvariant()
+          $expected = [IO.File]::ReadAllText("$($archive.FullName).sha256").Trim()
+          if ($expected -ne "$hash  $($archive.Name)") { throw "Windows checksum mismatch" }
+          $extract = Join-Path $env:RUNNER_TEMP "hub-package"
+          Expand-Archive -LiteralPath $archive.FullName -DestinationPath $extract
+          $binary = @(Get-ChildItem -LiteralPath $extract -Recurse -Filter "hacash-l2-hub.exe" -File)
+          if ($binary.Count -ne 1) { throw "Windows package must contain one hub binary" }
+          $forbidden = @(Get-ChildItem -LiteralPath $extract -Recurse -File | Where-Object {
+            $_.Name -like "*.env" -or $_.Name -like "*state*" -or $_.Name -like "*.log"
+          })
+          if ($forbidden.Count -ne 0) {
+            throw "Windows package contains runtime state or secrets: $($forbidden.Name -join ', ')"
+          }
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hpay-fast-pay-hub-windows-x64
+          path: |
+            dist-hub/*.zip
+            dist-hub/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  build-linux:
+    name: Hub (Linux x86_64)
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: hpay-hub-linux
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build release
+        run: cargo build --locked --release --bin hacash-l2-hub
+
+      - name: Verify linked libraries
+        run: |
+          test -x target/release/hacash-l2-hub
+          if ldd target/release/hacash-l2-hub | grep -q "not found"; then
+            ldd target/release/hacash-l2-hub
+            exit 1
+          fi
+
+      - name: Package and verify
+        run: |
+          version="manual"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ ! "$RELEASE_REF_NAME" =~ ^hub-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+              echo "Unsafe hub release tag: $RELEASE_REF_NAME"
+              exit 1
+            fi
+            version="$RELEASE_REF_NAME"
+          fi
+          bash scripts/pack-hub-release-linux.sh "$version"
+          archives=(dist-hub/*.tar.gz)
+          test "${#archives[@]}" -eq 1
+          tar -tzf "${archives[0]}" >/dev/null
+          (cd dist-hub && sha256sum -c ./*.tar.gz.sha256)
+          test "$(tar -tzf "${archives[0]}" | grep -Ec '(^|/)hacash-l2-hub$')" -eq 1
+          if tar -tzf "${archives[0]}" | grep -Eq '(^|/)(data|target|\.env)(/|$)|state.*\.json$|\.log$'; then
+            echo "Linux package contains runtime state or secrets"
+            exit 1
+          fi
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hpay-fast-pay-hub-linux-x86_64
+          path: |
+            dist-hub/*.tar.gz
+            dist-hub/*.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish Hub release
+    if: startsWith(github.ref, 'refs/tags/hub-v')
+    needs: [sdk-tests, build-windows, build-linux]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Validate tag
+        run: |
+          if [[ ! "$RELEASE_REF_NAME" =~ ^hub-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Unsafe hub release tag: $RELEASE_REF_NAME"
+            exit 1
+          fi
+
+      - name: Download artifacts
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Attest archives
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: |
+            release-assets/*.zip
+            release-assets/*.tar.gz
+
+      - name: Publish release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: HPAY Fast Pay Hub ${{ github.ref_name }}
+          make_latest: false
+          files: release-assets/*
+          generate_release_notes: true
+          body: |
+            ## Standalone HPAY Fast Pay Hub
+
+            Run this package on Windows, Linux or a VPS and connect it to a
+            trusted Hacash full node. It is separate from HPAY Miner Full and
+            never needs user wallet private keys.
+
+            When the full node is on the same machine, use
+            `127.0.0.1:8080`. Keep port 8080 private. Public hubs require
+            HTTPS, persistent state, protected hub secrets and backups.
+
+            A hub `settled` response is coordinated L2 state, not automatic
+            L1 finality. HPAY mainnet Fast Pay remains fail-closed until every
+            documented production readiness gate is satisfied.
+
+            Verify an archive before running it:
+
+            ```
+            gh attestation verify <file> --repo ${{ github.repository }}
+            ```

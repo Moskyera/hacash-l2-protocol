@@ -1,0 +1,54 @@
+# Production-ish single hub on a VPS
+#
+#   export PUBLIC_URL=https://hub.example.com
+#   export PROVIDER_ID=MyHub
+#   export IDENTITY_PASSWORD=...
+#   export API_TOKEN=...
+#   export BOOTSTRAP=https://seed1.example
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+services:
+  hub:
+    build: .
+    image: hacash-l2-hub:latest
+    container_name: hacash-l2-hub
+    ports:
+      - "9090:9090"
+    environment:
+      HACASH_L2_BIND: "0.0.0.0:9090"
+      HACASH_L2_PUBLIC_URL: "${PUBLIC_URL:?set PUBLIC_URL}"
+      HACASH_L2_PROVIDER_ID: "${PROVIDER_ID:-ProdHub}"
+      HACASH_L2_NAME: "${HUB_NAME:-production-hub}"
+      HACASH_L2_FULLNODE: "${FULLNODE:-host.docker.internal:8080}"
+      HACASH_L2_FULLNODE_TOKEN: "${FULLNODE_TOKEN:-}"
+      HACASH_L2_BOOTSTRAP: "${BOOTSTRAP:-}"
+      HACASH_L2_SEEDS_URL: "${SEEDS_URL:-}"
+      HACASH_L2_STATE_PATH: "/data/hub-state.json"
+      HACASH_L2_API_TOKEN: "${API_TOKEN:?set API_TOKEN}"
+      HACASH_L2_IDENTITY_PASSWORD: "${IDENTITY_PASSWORD:?set IDENTITY_PASSWORD}"
+      HACASH_L2_REQUIRE_VALID_HELLO_SIG: "true"
+      HACASH_L2_ALLOW_PRIVATE_PEERS: "false"
+      HACASH_L2_PUBLIC: "true"
+      HACASH_L2_REGION: "${REGION:-}"
+      HACASH_L2_FEE_PPM: "${FEE_PPM:-0}"
+      HACASH_L2_FEE_BASE_MEI: "${FEE_BASE_MEI:-0}"
+      HACASH_L2_CONTACT: "${CONTACT:-}"
+      HACASH_L2_GOSSIP_SECS: "30"
+      HACASH_L2_WATCH_SECS: "60"
+      HACASH_L2_ANNOUNCE_ON_START: "true"
+      HACASH_L2_SIG_VERIFY: "true"
+      RUST_LOG: "hacash_l2_hub=info"
+    volumes:
+      - hub-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  hub-data:

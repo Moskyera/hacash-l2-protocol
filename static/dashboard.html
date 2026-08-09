@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hacash L2 Hub Dashboard</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #e8eef7; background: #0b1220; }
+    body { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
+    .sub { color: #8aa0bf; margin-bottom: 1.25rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: .75rem; }
+    .card { background: #151e30; border: 1px solid #243049; border-radius: 10px; padding: .9rem 1rem; }
+    .card b { display:block; font-size: 1.35rem; margin-top: .25rem; }
+    .card span { color: #8aa0bf; font-size: .8rem; }
+    a { color: #6cb6ff; }
+    pre { background: #101826; border-radius: 8px; padding: 1rem; overflow: auto; font-size: .8rem; }
+    button { background: #2b6cb0; color: #fff; border: 0; border-radius: 8px; padding: .5rem .9rem; cursor: pointer; }
+    button:hover { background: #3182ce; }
+    .row { display:flex; gap:.5rem; flex-wrap:wrap; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Hacash L2 Hub</h1>
+  <p class="sub">Operator dashboard · no custody · agent-first payments</p>
+  <div class="row">
+    <button onclick="refresh()">Refresh</button>
+    <a href="/v1/agent/v1/manifest">Agent manifest</a>
+    <a href="/metrics">Metrics</a>
+    <a href="/v1/wallet/ui">Thin wallet</a>
+    <a href="/v1/agent/v1/openapi.json">OpenAPI</a>
+  </div>
+  <div class="grid" id="cards"></div>
+  <h2 style="margin-top:1.5rem;font-size:1rem">Status JSON</h2>
+  <pre id="out">loading…</pre>
+  <script>
+    async function refresh() {
+      const s = await fetch('/status').then(r => r.json());
+      const h = await fetch('/health').then(r => r.json()).catch(() => ({}));
+      document.getElementById('out').textContent = JSON.stringify({ health: h, status: s }, null, 2);
+      const cards = [
+        ['Provider', s.provider_id],
+        ['Phase', s.phase],
+        ['Channels', s.channels_registered],
+        ['Peers', `${s.peers_reachable}/${s.peers_known}`],
+        ['Payments open', s.payments_open],
+        ['Payments settled', s.payments_settled],
+        ['Bills active', s.bills_active],
+        ['Fullnode', s.fullnode_reachable ? ('h' + (s.fullnode_height||'?')) : 'down'],
+      ];
+      document.getElementById('cards').innerHTML = cards.map(([k,v]) =>
+        `<div class="card"><span>${k}</span><b>${v ?? '—'}</b></div>`).join('');
+    }
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

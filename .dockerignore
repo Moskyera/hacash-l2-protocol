@@ -1,0 +1,8 @@
+target
+sdk/**/node_modules
+sdk/**/dist
+.git
+*.md
+!README.md
+!NETWORK-GLOBAL.md
+data

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "network": "hacash-l2-mainnet-community",
+  "updated": "2026-07-25",
+  "seeds": [
+    {
+      "provider_id": "SeedHub",
+      "public_url": "https://l2-seed.example.com",
+      "region": "eu",
+      "notes": "Replace with real community seeds"
+    }
+  ]
+}

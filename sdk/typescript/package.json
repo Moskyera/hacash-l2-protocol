@@ -1,0 +1,45 @@
+{
+  "name": "@hacash/agent-pay",
+  "version": "0.2.0",
+  "description": "Hacash Agent Pay SDK — L2 Channel Chain payments for AI agents",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "example": "tsx examples/pay-loop.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "keywords": [
+    "hacash",
+    "l2",
+    "agent",
+    "payments",
+    "ai",
+    "channel-chain"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@noble/hashes": "^1.7.1",
+    "@noble/secp256k1": "^2.2.3",
+    "bs58check": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

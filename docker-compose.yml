@@ -1,0 +1,82 @@
+# Seed hub network for agents/wallets (dev / community lab)
+#
+#   docker compose up --build
+#   curl http://127.0.0.1:9090/v1/agent/v1/manifest
+#
+# Optional second hub joins via bootstrap.
+
+services:
+  hub-seed:
+    build: .
+    container_name: hacash-l2-seed
+    ports:
+      - "9090:9090"
+    environment:
+      HACASH_L2_BIND: "0.0.0.0:9090"
+      HACASH_L2_PUBLIC_URL: "${HACASH_L2_PUBLIC_URL:?set the externally reachable HTTPS hub URL}"
+      HACASH_L2_PROVIDER_ID: "SeedHub"
+      HACASH_L2_NAME: "community-seed"
+      HACASH_L2_FULLNODE: "${HACASH_L2_FULLNODE:-host.docker.internal:8080}"
+      HACASH_L2_ALLOW_PRIVATE_PEERS: "false"
+      HACASH_L2_PUBLIC: "true"
+      HACASH_L2_AGENT_API_KEY: "${HACASH_L2_AGENT_API_KEY:?set a strong agent API key}"
+      HACASH_L2_IDENTITY_PASSWORD: "${HACASH_L2_SEED_IDENTITY_PASSWORD:?set a unique seed hub identity password}"
+      HACASH_L2_REQUIRE_VALID_HELLO_SIG: "true"
+      HACASH_L2_REQUIRE_VERIFIED_AGENT: "true"
+      HACASH_L2_API_TOKEN: "${HACASH_L2_API_TOKEN:?set a strong operator API token}"
+      HACASH_L2_STATE_PATH: "/data/hub-state.json"
+      HACASH_L2_SIG_VERIFY: "true"
+      HACASH_L2_MAX_AMOUNT_MEI: "1000000"
+      HACASH_L2_MAX_PAY_PER_HOUR: "1000"
+    volumes:
+      - hub-seed-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+  hub-peer:
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    build: .
+    container_name: hacash-l2-peer
+    ports:
+      - "9091:9090"
+    environment:
+      HACASH_L2_BIND: "0.0.0.0:9090"
+      HACASH_L2_PUBLIC_URL: "${HACASH_L2_PEER_PUBLIC_URL:?set peer externally reachable URL}"
+      HACASH_L2_PROVIDER_ID: "PeerHub"
+      HACASH_L2_NAME: "peer-hub"
+      HACASH_L2_FULLNODE: "${HACASH_L2_FULLNODE:-host.docker.internal:8080}"
+      HACASH_L2_BOOTSTRAP: "http://hub-seed:9090"
+      HACASH_L2_ALLOW_PRIVATE_PEERS: "true"
+      HACASH_L2_PUBLIC: "true"
+      HACASH_L2_ANNOUNCE_ON_START: "true"
+      HACASH_L2_AGENT_API_KEY: "${HACASH_L2_AGENT_API_KEY:?set a strong agent API key}"
+      HACASH_L2_IDENTITY_PASSWORD: "${HACASH_L2_PEER_IDENTITY_PASSWORD:?set a unique peer hub identity password}"
+      HACASH_L2_REQUIRE_VALID_HELLO_SIG: "true"
+      HACASH_L2_REQUIRE_VERIFIED_AGENT: "true"
+      HACASH_L2_API_TOKEN: "${HACASH_L2_API_TOKEN:?set a strong operator API token}"
+      HACASH_L2_STATE_PATH: "/data/hub-state.json"
+    volumes:
+      - hub-peer-data:/data
+    depends_on:
+      - hub-seed
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    profiles:
+      - multi
+
+volumes:
+  hub-seed-data:
+  hub-peer-data:
