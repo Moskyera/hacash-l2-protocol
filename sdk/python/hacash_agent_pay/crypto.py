@@ -6,6 +6,7 @@ import hashlib
 
 import base58
 from ecdsa import SECP256k1, SigningKey, VerifyingKey, util
+from Crypto.Hash import RIPEMD160
 
 
 def _sha2(data: bytes) -> bytes:
@@ -13,9 +14,7 @@ def _sha2(data: bytes) -> bytes:
 
 
 def _ripemd160(data: bytes) -> bytes:
-    h = hashlib.new("ripemd160")
-    h.update(data)
-    return h.digest()
+    return RIPEMD160.new(data=data).digest()
 
 
 def _hex(b: bytes) -> str:

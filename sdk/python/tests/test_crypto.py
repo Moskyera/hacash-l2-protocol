@@ -6,6 +6,7 @@ def test_deterministic_address():
     b = HacashKey.from_password("agent-sdk-test")
     assert a.address == b.address
     assert len(a.address) > 20
+    assert a.address == "16YeVeZYWVJLzhCzsYwNU8dLXwX5vqQK1"
 
 
 def test_sign_verify():
