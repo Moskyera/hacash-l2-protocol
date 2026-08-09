@@ -1,6 +1,6 @@
 [package]
 name = "hacash-l2-protocol"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Hacash L2 Channel Chain protocol — standalone Channel Service Provider hub (separate from miner/fullnode)"
 license = "MIT"
