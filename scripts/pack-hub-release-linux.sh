@@ -25,6 +25,8 @@ mkdir -p "$package"
 
 install -m 0755 "$binary" "$package/hacash-l2-hub"
 install -m 0755 "$root/scripts/install-vps-release.sh" "$package/INSTALL-VPS.sh"
+install -m 0755 "$root/scripts/one-click-vps.sh" "$package/ONE-CLICK-VPS.sh"
+install -m 0755 "$root/scripts/hpay-status.sh" "$package/hpay-status.sh"
 install -m 0644 "$root/README-HUB.txt" "$package/README.txt"
 install -m 0644 "$root/l2-hub.example.ini" "$package/l2-hub.example.ini"
 install -m 0644 "$root/SECURITY.md" "$package/SECURITY.md"

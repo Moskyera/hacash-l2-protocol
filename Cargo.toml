@@ -1,8 +1,8 @@
 [package]
 name = "hacash-l2-protocol"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
-description = "Hacash L2 Channel Chain protocol — standalone Channel Service Provider hub (separate from miner/fullnode)"
+description = "Hacash L2 Channel Chain protocol for a standalone Channel Service Provider hub"
 license = "MIT"
 readme = "README.md"
 keywords = ["hacash", "l2", "channel-chain", "payments", "csp"]

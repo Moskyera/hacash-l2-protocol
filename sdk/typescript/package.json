@@ -1,7 +1,7 @@
 {
   "name": "@hacash/agent-pay",
-  "version": "0.2.2",
-  "description": "Hacash Agent Pay SDK — L2 Channel Chain payments for AI agents",
+  "version": "0.2.3",
+  "description": "Hacash Agent Pay SDK for L2 Channel Chain payments for AI agents",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -18,20 +18,32 @@ If HPAY Miner Full runs on the same computer, use this full-node endpoint:
 Keep the full-node API on localhost. Do not expose port 8080 publicly.
 Only the HTTPS reverse proxy for the hub should be public.
 
-Linux VPS
----------
-The Linux archive includes INSTALL-VPS.sh.
+Linux VPS one-click
+-------------------
+The Linux archive includes ONE-CLICK-VPS.sh. It installs the Hub, HTTPS and,
+if you choose it, the pinned HPAY-compatible full node. Mining stays disabled.
 
-1. Copy the extracted directory to the VPS.
-2. Set at least:
-     export PUBLIC_URL=https://hub.example.com
-     export PROVIDER_ID=MyHub
-     export FULLNODE=127.0.0.1:8080
-3. Run:
-     sudo -E bash ./INSTALL-VPS.sh
-4. Put Caddy or nginx in front of localhost:9090.
-5. Check:
-     curl -fsS https://hub.example.com/health
+Before starting:
+
+1. Create a DNS record such as hub.example.com pointing to your VPS.
+2. Open public ports 80 and 443 in the VPS provider firewall.
+3. Extract the Linux Hub archive and run:
+
+     sudo bash ./ONE-CLICK-VPS.sh
+
+The installer asks only for the domain, a short Hub name, and whether it should
+install the full node too. Choose Yes on a new VPS. Choose No only when an
+HPAY-compatible full node is already running locally on 127.0.0.1:8080.
+
+After installation, check everything with:
+
+     sudo hpay-status
+
+The full-node API on port 8080 and Hub backend on port 9090 stay private. Only
+the HTTPS address is public. A new full node must synchronize before Fast Pay
+is used. Re-running the installer preserves the existing Hub identity secrets.
+
+Advanced/manual installation remains available through INSTALL-VPS.sh.
 
 Windows local/private hub
 -------------------------

@@ -1,7 +1,7 @@
 [project]
 name = "hacash-agent-pay"
-version = "0.2.2"
-description = "Hacash Agent Pay SDK — L2 payments for AI agents"
+version = "0.2.3"
+description = "Hacash Agent Pay SDK for L2 payments for AI agents"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

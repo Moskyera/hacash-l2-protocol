@@ -160,6 +160,15 @@ jobs:
             exit 1
           fi
 
+      - name: Validate one-click installer
+        run: |
+          if ! command -v shellcheck >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y shellcheck; fi
+          bash -n scripts/one-click-vps.sh
+          bash -n scripts/install-vps-release.sh
+          bash -n scripts/hpay-status.sh
+          shellcheck -x scripts/one-click-vps.sh scripts/install-vps-release.sh scripts/hpay-status.sh scripts/test-one-click-installer.sh scripts/pack-hub-release-linux.sh
+          bash scripts/test-one-click-installer.sh
+
       - name: Package and verify
         run: |
           version="manual"
@@ -176,6 +185,8 @@ jobs:
           tar -tzf "${archives[0]}" >/dev/null
           (cd dist-hub && sha256sum -c ./*.tar.gz.sha256)
           test "$(tar -tzf "${archives[0]}" | grep -Ec '(^|/)hacash-l2-hub$')" -eq 1
+          test "$(tar -tzf "${archives[0]}" | grep -Ec '(^|/)ONE-CLICK-VPS\.sh$')" -eq 1
+          test "$(tar -tzf "${archives[0]}" | grep -Ec '(^|/)hpay-status\.sh$')" -eq 1
           if tar -tzf "${archives[0]}" | grep -Eq '(^|/)(data|target|\.env)(/|$)|state.*\.json$|\.log$'; then
             echo "Linux package contains runtime state or secrets"
             exit 1
